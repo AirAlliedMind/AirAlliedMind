@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirAlliedMind</title>
+    <style>
+        /* تنظیمات پس‌زمینه و ظاهر کلی طبق استایل Notera */
+        body {
+            background: linear-gradient(0deg, #121212 0%, #1a1a1a 35%, #76b1ba 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 100px;
+        }
+
+        /* استایل لینک‌ها برای اینکه کل دکمه قابل کلیک باشد */
+        .btn-link {
+            text-decoration: none;
+            width: 85%;
+            max-width: 350px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        /* استایل دکمه‌های مستطیلی و شیک */
+        .btn {
+            background-color: transparent;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            width: 100%;
+            padding: 20px;
+            text-align: left;
+            font-size: 15px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        /* افکت کلیک روی دکمه */
+        .btn:active {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+
+        /* ایجاد فاصله بیشتر برای دکمه بالایی */
+        .btn-top {
+            margin-bottom: 60px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <a href="entersite.html" class="btn-link btn-top">
+            <button class="btn">ENTER TO SITE</button>
+        </a>
+
+        <a href="about.html" class="btn-link">
+            <button class="btn">ABOUT US</button>
+        </a>
+
+        <a href="cantact.html" class="btn-link">
+            <button class="btn">CANTACT US</button>
+        </a>
+
+    </div>
+
+</body>
+</html>

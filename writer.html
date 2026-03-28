@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Login</title>
+    <style>
+        body {
+            background: linear-gradient(0deg, #121212 0%, #1a1a1a 35%, #76b1ba 100%);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        .top-bar {
+            width: 100%;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: flex-start;
+            box-sizing: border-box;
+        }
+
+        .back-arrow {
+            text-decoration: none;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .login-container {
+            width: 85%;
+            max-width: 350px;
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        /* استایل کادرهای ورود متن */
+        input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            box-sizing: border-box;
+            outline: none;
+            font-size: 16px;
+        }
+
+        input:focus {
+            border-color: #76b1ba;
+        }
+
+        /* استایل دکمه ورود */
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            color: white;
+            border: 1px solid #76b1ba;
+            border-radius: 10px;
+            font-size: 16px;
+            text-transform: uppercase;
+            cursor: pointer;
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        .login-btn:active {
+            background: rgba(118, 177, 186, 0.2);
+        }
+
+        #error-msg {
+            color: #ff5555;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none; /* در ابتدا مخفی است */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a href="entersite.html" class="back-arrow">&#8592;</a>
+    </div>
+
+    <div class="login-container">
+        <h2>Manager Access</h2>
+        
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        
+        <button class="login-btn" onclick="checkLogin()">Login</button>
+        
+        <p id="error-msg">Incorrect username or password!</p>
+    </div>
+
+    <script>
+        function checkLogin() {
+            // اطلاعاتی که تو دادی
+            const correctUser = "AirAlliedmind1";
+            const correctPass =
+            "me";
+
+            // مقادیری که کاربر وارد کرده
+            const userInp = document.getElementById("username").value;
+            const passInp = document.getElementById("password").value;
+            const errorMsg = document.getElementById("error-msg");
+
+            if (userInp === correctUser && passInp === correctPass) {
+                // اگر درست بود برو به صفحه manager.html
+                window.location.href = "manager.html";
+            } else {
+                // اگر غلط بود پیام خطا نشان بده
+                errorMsg.style.display = "block";
+            }
+        }
+    </script>
+
+</body>
+</html>

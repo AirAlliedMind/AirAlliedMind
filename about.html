@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us</title>
+    <style>
+        body {
+            background: linear-gradient(0deg, #121212 0%, #1a1a1a 35%, #76b1ba 100%);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        .top-bar {
+            width: 100%;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: flex-start;
+            box-sizing: border-box;
+        }
+
+        .back-arrow {
+            text-decoration: none;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+
+        .container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* استایل متن معرفی تیم */
+        .intro-text {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-link {
+            text-decoration: none;
+            width: 90%;
+            max-width: 350px;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            background-color: transparent;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            width: 100%;
+            padding: 18px;
+            font-size: 14px;
+            text-transform: uppercase;
+            border-radius: 10px;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+
+        .btn:active {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* فوتر انتهای صفحه */
+        footer {
+            margin-top: auto; /* چسبیدن به پایین صفحه */
+            padding-bottom: 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a href="index.html" class="back-arrow">&#8592;</a>
+    </div>
+
+    <div class="container">
+        <p class="intro-text">
+            We are a professional coding team specializing in web design. 
+            We create all types of websites with custom designs. 
+            To request a project at a reasonable price, join our Telegram channel 
+            or message us on Instagram.
+        </p>
+        
+        <a href="https://t.me/AirAlliedMind" class="btn-link">
+            <button class="btn">TELEGRAM CHANNEL</button>
+        </a>
+
+        <a href="https://www.instagram.com/aliakbarmfe?igsh=ZXNwdWFvOG52ZGVq" class="btn-link">
+            <button class="btn">INSTAGRAM</button>
+        </a>
+    </div>
+
+    <footer>
+        AIR ALLIED MIND &trade;
+    </footer>
+
+</body>
+</html>

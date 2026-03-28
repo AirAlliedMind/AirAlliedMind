@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Panel - Air Allied Mind</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(0deg, #121212 0%, #1a1a1a 35%, #76b1ba 100%);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            color: white;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        /* هدر اصلی */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .header-btns { display: flex; gap: 10px; }
+
+        .btn-icon {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* بخش جستجو */
+        #search-box {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 15px;
+            background: #222;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #76b1ba;
+            z-index: 100;
+        }
+
+        /* بخش اصلی نوشتن */
+        .editor-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #page-content {
+            width: 100%;
+            height: 70%;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 15px;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+            box-sizing: border-box;
+            text-align: left; /* پشتیبانی خودکار از فارسی/انگلیسی */
+        }
+
+        /* ناوبری صفحات (پایین) */
+        .nav-bar {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .page-info {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* لیست صفحات */
+        #page-list {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #222;
+            border: 1px solid #76b1ba;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 150px;
+            border-radius: 10px;
+        }
+        .page-item { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
+
+        /* نتایج جستجو */
+        #search-results {
+            margin-top: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-btns">
+            <button class="btn-icon" onclick="downloadPDF()">Download PDF</button>
+            <button class="btn-icon" onclick="toggleSearch()">Search</button>
+        </div>
+        <button class="btn-icon" style="border-color: #ff5555;" onclick="logout()">Log Out</button>
+    </div>
+
+    <div id="search-box">
+        <input type="text" id="search-input" placeholder="Search word..." oninput="runSearch()" style="width:150px; background:#333; color:white; border:none; padding:5px;">
+        <div id="search-results"></div>
+    </div>
+
+    <div class="editor-container">
+        <textarea id="page-content" placeholder="Start typing here..." oninput="saveContent()"></textarea>
+    </div>
+
+    <div id="page-list"></div>
+
+    <div class="nav-bar">
+        <button class="btn-icon" onclick="changePage(-1)">BACK</button>
+        <div class="page-info" onclick="togglePageList()">Page: <span id="current-page-num">1</span></div>
+        <button class="btn-icon" onclick="changePage(1)">NEXT</button>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let pages = JSON.parse(localStorage.getItem('sitePages')) || { 1: "" };
+
+        // جلوگیری از دکمه بازگشت مرورگر
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () { history.go(1); };
+
+        function loadPage() {
+            document.getElementById('page-content').value = pages[currentPage] || "";
+            document.getElementById('current-page-num').innerText = currentPage;
+            localStorage.setItem('lastPageVisited', currentPage);
+        }
+
+        function saveContent() {
+            const content = document.getElementById('page-content').value;
+            pages[currentPage] = content;
+            localStorage.setItem('sitePages', JSON.stringify(pages));
+            // سیگنال برای آپدیت زنده در صفحه View
+            localStorage.setItem('updateTrigger', Date.now());
+        }
+
+        function changePage(step) {
+            currentPage += step;
+            if (currentPage < 1) currentPage = 1;
+            if (!pages[currentPage]) pages[currentPage] = "";
+            loadPage();
+            saveContent();
+        }
+
+        function togglePageList() {
+            const list = document.getElementById('page-list');
+            list.style.display = list.style.display === 'block' ? 'none' : 'block';
+            list.innerHTML = "";
+            Object.keys(pages).forEach(p => {
+                let div = document.createElement('div');
+                div.className = 'page-item';
+                div.innerText = "Page " + p;
+                div.onclick = () => { currentPage = parseInt(p); loadPage(); list.style.display = 'none'; };
+                list.appendChild(div);
+            });
+        }
+
+        function toggleSearch() {
+            const box = document.getElementById('search-box');
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function runSearch() {
+            const term = document.getElementById('search-input').value.toLowerCase();
+            const resultsDiv = document.getElementById('search-results');
+            resultsDiv.innerHTML = "";
+            if (term.length < 1) return;
+
+            Object.keys(pages).forEach(p => {
+                if (pages[p].toLowerCase().includes(term)) {
+                    let res = document.createElement('div');
+                    res.style.padding = "5px";
+                    res.style.cursor = "pointer";
+                    res.innerText = "Found in Page " + p;
+                    res.onclick = () => { currentPage = parseInt(p); loadPage(); toggleSearch(); };
+                    resultsDiv.appendChild(res);
+                }
+            });
+        }
+
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const pageKeys = Object.keys(pages).sort((a,b) => a-b);
+            
+            pageKeys.forEach((p, index) => {
+                // رنگ کاهی پس‌زمینه
+                doc.setFillColor(245, 222, 179); 
+                doc.rect(0, 0, 210, 297, 'F');
+                
+                doc.setTextColor(40, 40, 40);
+                doc.setFontSize(16);
+                doc.text("Page " + p, 10, 20);
+                
+                doc.setFontSize(12);
+                const splitText = doc.splitTextToSize(pages[p], 180);
+                doc.text(splitText, 10, 40);
+                
+                if (index < pageKeys.length - 1) doc.addPage();
+            });
+            
+            doc.save("AirAlliedMind_Notes.pdf");
+        }
+
+        function logout() {
+            // پاک کردن وضعیت لاگین (اگر قبلا ساختی)
+            localStorage.removeItem("isLoggedIn");
+            window.location.href = "writer.html";
+        }
+
+        loadPage();
+    </script>
+</body>
+</html>
