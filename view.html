@@ -6,73 +6,31 @@
     <title>Member View</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             background: linear-gradient(0deg, #121212 0%, #1a1a1a 35%, #76b1ba 100%);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100dvh;
-            color: white;
-            font-family: sans-serif;
-            font-weight: bold;
-            overflow: hidden;
+            margin: 0; display: flex; flex-direction: column; height: 100dvh;
+            color: white; font-family: sans-serif; font-weight: bold; overflow: hidden;
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        button {
-            padding: 10px 20px;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(255, 255, 255, 0.1); }
+        button { padding: 10px 15px; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; cursor: pointer; }
         #page-display {
-            width: 85%;
-            height: 55vh;
-            margin: 30px auto;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 15px;
-            font-size: 20px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            font-weight: bold;
-            direction: auto;
-            unicode-bidi: plaintext;
-            overflow-y: auto;
+            width: 85%; height: 55vh; margin: 30px auto; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; border-radius: 15px; font-size: 20px; line-height: 1.6; white-space: pre-wrap;
+            font-weight: bold; direction: auto; unicode-bidi: plaintext; overflow-y: auto;
         }
-        .nav-bar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-            margin-top: auto;
-            margin-bottom: 30px;
-        }
-        #page-num {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
+        .nav-bar { display: flex; justify-content: center; align-items: center; gap: 40px; margin-top: auto; margin-bottom: 30px; }
+        #page-num { background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="header">
-        <button onclick="searchContent()">🔍 Search</button>
+        <button onclick="downloadFullPDF()">PDF ALL</button>
+        <button onclick="searchContent()">🔍</button>
         <button onclick="logout()" style="color: #ff6b6b;">Log Out</button>
     </div>
-
     <div id="page-display">Loading...</div>
-
     <div class="nav-bar">
         <button onclick="changePage(-1)">BACK</button>
         <div id="page-num" onclick="goToPage()">Page: 1</div>
@@ -97,38 +55,49 @@
         const display = document.getElementById('page-display');
 
         function listenToPage(page) {
-            db.ref('pages/' + page).on('value', (s) => {
-                display.innerText = s.val() || "Empty Page.";
-            });
+            db.ref('pages/' + page).on('value', (s) => { display.innerText = s.val() || "Empty Page."; });
         }
-
         function changePage(step) {
             db.ref('pages/' + currentPage).off();
-            currentPage += step;
-            if (currentPage < 1) currentPage = 1;
+            currentPage += step; if (currentPage < 1) currentPage = 1;
             document.getElementById('page-num').innerText = "Page: " + currentPage;
             listenToPage(currentPage);
         }
-
         function goToPage() {
             const p = prompt("Enter Page Number:");
             if(p && !isNaN(p)) { currentPage = parseInt(p); changePage(0); }
         }
-
         function searchContent() {
-            const query = prompt("Search for a word:");
+            const query = prompt("Search word:");
             if (!query) return;
             db.ref('pages').once('value').then((s) => {
-                const pages = s.val();
-                let foundIn = [];
-                for(let p in pages) { if(pages[p] && pages[p].includes(query)) foundIn.push(p); }
-                if(foundIn.length > 0) {
-                    const target = prompt("Found in pages: " + foundIn.join(", ") + "\nGo to page:");
-                    if(target && foundIn.includes(target)) { currentPage = parseInt(target); changePage(0); }
-                } else { alert("Not found!"); }
+                const pages = s.val(); let found = [];
+                for(let p in pages) { if(pages[p] && pages[p].includes(query)) found.push(p); }
+                if(found.length > 0) {
+                    const t = prompt("Found in: " + found.join(", ") + "\nGo to page:");
+                    if(t) { currentPage = parseInt(t); changePage(0); }
+                } else alert("Not found!");
             });
         }
-        
+
+        async function downloadFullPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const snapshot = await db.ref('pages').once('value');
+            const allPages = snapshot.val();
+            if(!allPages) return alert("No pages to download!");
+            const sortedKeys = Object.keys(allPages).sort((a, b) => a - b);
+            sortedKeys.forEach((key, index) => {
+                if (index > 0) doc.addPage();
+                doc.setFillColor(244, 228, 188); doc.rect(0, 0, 210, 297, 'F');
+                doc.setTextColor(100, 70, 40); doc.setFontSize(24); doc.text("Page " + key, 105, 20, {align: 'center'});
+                doc.setTextColor(40, 40, 40); doc.setFontSize(16);
+                const lines = doc.splitTextToSize(allPages[key], 180);
+                doc.text(lines, 15, 40);
+            });
+            doc.save("AirAlliedMind_Full_Journal.pdf");
+        }
+
         function logout() { location.replace('index.html'); }
         listenToPage(1);
     </script>
