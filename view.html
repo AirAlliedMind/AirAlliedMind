@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Member View - Air Allied Mind</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        /* استایل‌ها دقیقاً مشابه پنل مدیریت برای یکدستی ظاهر */
         body {
             background: linear-gradient(0deg, #121212 0%, #1a1a1a 35%, #76b1ba 100%);
             margin: 0;
@@ -15,215 +15,78 @@
             height: 100dvh;
             color: white;
             font-family: sans-serif;
-            overflow: auto;
         }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-icon {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        #search-box {
-            display: none;
-            position: absolute;
-            top: 60px;
-            right: 15px;
-            background: #222;
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid #76b1ba;
-            z-index: 100;
-        }
-
-        .display-container {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* بخش نمایش متن - غیر قابل ویرایش (Read Only) */
         #page-display {
-            width: 100%;
+            width: 85%;
             height: 55vh;
-            background: rgba(255,255,255,0.03);
+            margin: 40px auto;
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            padding: 15px;
-            border-radius: 15px;
-            line-height: 1.6;
-            box-sizing: border-box;
-            overflow-y: auto;
-            white-space: pre-wrap; /* حفظ فاصله‌ها و خط‌های جدید */
-        }
-
-        .nav-bar {
             padding: 20px;
+            border-radius: 15px;
+            font-size: 18px;
+            line-height: 1.6;
+            white-space: pre-wrap; /* حفظ فاصله و خطوط */
+        }
+        .nav-bar {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            width: 100%;
-            box-sizing: border-box;
+            gap: 20px;
         }
-
-        .page-info {
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
             background: rgba(255,255,255,0.1);
-            padding: 5px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
         }
-
-        #page-list {
-            display: none;
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #222;
-            border: 1px solid #76b1ba;
-            max-height: 200px;
-            overflow-y: auto;
-            width: 150px;
-            border-radius: 10px;
-        }
-        .page-item { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
-        #search-results { margin-top: 5px; max-height: 150px; overflow-y: auto; font-size: 12px; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="header-btns">
-            <button class="btn-icon" onclick="downloadPDF()">Download PDF</button>
-            <button class="btn-icon" onclick="toggleSearch()">Search</button>
-        </div>
-        <button class="btn-icon" style="border-color: #ff5555;" onclick="logout()">Log Out</button>
-    </div>
-
-    <div id="search-box">
-        <input type="text" id="search-input" placeholder="Search..." oninput="runSearch()" style="width:150px; background:#333; color:white; border:none; padding:5px;">
-        <div id="search-results"></div>
-    </div>
-
-    <div class="display-container">
-        <div id="page-display">Loading content...</div>
-    </div>
-
-    <div id="page-list"></div>
+    <div id="page-display">در حال بارگذاری...</div>
 
     <div class="nav-bar">
-        <button class="btn-icon" onclick="changePage(-1)">BACK</button>
-        <div class="page-info" onclick="togglePageList()">Page: <span id="current-page-num">1</span></div>
-        <button class="btn-icon" onclick="changePage(1)">NEXT</button>
+        <button onclick="changePage(-1)">BACK</button>
+        <span id="page-num">Page: 1</span>
+        <button onclick="changePage(1)">NEXT</button>
     </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsEwllSPLTPuviM9-DTE0iwZ3vHSzyWrk",
+            authDomain: "airalliedmind.firebaseapp.com",
+            databaseURL: "https://airalliedmind-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "airalliedmind",
+            storageBucket: "airalliedmind.firebasestorage.app",
+            appId: "1:565351294890:web:857a9f989bbba3274f6dd3"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
         let currentPage = 1;
-        let pages = JSON.parse(localStorage.getItem('sitePages')) || { 1: "" };
 
-        // حبس کاربر در صفحه
-        history.pushState(null, null, location.href);
-        window.onpopstate = function () { history.go(1); };
+        const display = document.getElementById('page-display');
+        const pageLabel = document.getElementById('page-num');
 
-        function loadPage() {
-            // آپدیت مجدد لیست صفحات و محتوا از حافظه
-            pages = JSON.parse(localStorage.getItem('sitePages')) || { 1: "" };
-            document.getElementById('page-display').innerText = pages[currentPage] || "This page is empty.";
-            document.getElementById('current-page-num').innerText = currentPage;
+        // گوش دادن به تغییرات دیتابیس در لحظه (Realtime)
+        function listenToPage(page) {
+            db.ref('pages/' + page).on('value', (snapshot) => {
+                display.innerText = snapshot.val() || "هنوز متنی در این صفحه نوشته نشده است.";
+            });
         }
-
-        // --- گوش به زنگ برای تغییرات زنده ---
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'updateTrigger' || e.key === 'sitePages') {
-                loadPage(); // به محض تغییر در پنل مدیریت، اینجا آپدیت می‌شود
-            }
-        });
 
         function changePage(step) {
+            // قطع گوش دادن به صفحه قبل
+            db.ref('pages/' + currentPage).off();
+            
             currentPage += step;
             if (currentPage < 1) currentPage = 1;
-            // اگر مدیر هنوز صفحه را نساخته باشد، عضو نمی‌تواند جلوتر برود
-            if (currentPage > Object.keys(pages).length) currentPage = Object.keys(pages).length;
-            loadPage();
+            pageLabel.innerText = "Page: " + currentPage;
+            listenToPage(currentPage);
         }
 
-        function togglePageList() {
-            const list = document.getElementById('page-list');
-            list.style.display = list.style.display === 'block' ? 'none' : 'block';
-            list.innerHTML = "";
-            Object.keys(pages).forEach(p => {
-                let div = document.createElement('div');
-                div.className = 'page-item';
-                div.innerText = "Page " + p;
-                div.onclick = () => { currentPage = parseInt(p); loadPage(); list.style.display = 'none'; };
-                list.appendChild(div);
-            });
-        }
-
-        function toggleSearch() {
-            const box = document.getElementById('search-box');
-            box.style.display = box.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function runSearch() {
-            const term = document.getElementById('search-input').value.toLowerCase();
-            const resultsDiv = document.getElementById('search-results');
-            resultsDiv.innerHTML = "";
-            if (term.length < 1) return;
-
-            Object.keys(pages).forEach(p => {
-                if (pages[p].toLowerCase().includes(term)) {
-                    let res = document.createElement('div');
-                    res.style.padding = "5px";
-                    res.style.cursor = "pointer";
-                    res.innerText = "Found in Page " + p;
-                    res.onclick = () => { currentPage = parseInt(p); loadPage(); toggleSearch(); };
-                    resultsDiv.appendChild(res);
-                }
-            });
-        }
-
-        async function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const pageKeys = Object.keys(pages).sort((a,b) => a-b);
-            
-            pageKeys.forEach((p, index) => {
-                doc.setFillColor(245, 222, 179); // رنگ کاهی
-                doc.rect(0, 0, 210, 297, 'F');
-                doc.setTextColor(40, 40, 40);
-                doc.setFontSize(16);
-                doc.text("Air Allied Mind - Page " + p, 10, 20);
-                doc.setFontSize(12);
-                const splitText = doc.splitTextToSize(pages[p], 180);
-                doc.text(splitText, 10, 40);
-                if (index < pageKeys.length - 1) doc.addPage();
-            });
-            doc.save("AirAlliedMind_Archive.pdf");
-        }
-
-        function logout() {
-            window.location.href = "entersite.html";
-        }
-
-        loadPage();
+        listenToPage(1);
     </script>
 </body>
 </html>
