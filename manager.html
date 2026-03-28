@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manager Panel - Air Allied Mind</title>
+    <title>مدیریت - Air Allied Mind</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             background: linear-gradient(0deg, #121212 0%, #1a1a1a 35%, #76b1ba 100%);
             margin: 0;
             display: flex;
             flex-direction: column;
-            height: 100dvh; /* اصلاح برای موبایل */
+            height: 100dvh;
             color: white;
             font-family: sans-serif;
-            overflow: auto; /* اجازه اسکرول در صورت نیاز */
+            overflow: hidden;
         }
         .header {
             display: flex;
@@ -34,7 +33,7 @@
         }
         #page-content {
             width: 90%;
-            height: 55vh; /* کوتاه کردن کادر برای باز شدن فضا */
+            height: 55vh;
             margin: 20px auto;
             background: rgba(255,255,255,0.05);
             border: none;
@@ -44,6 +43,7 @@
             border-radius: 15px;
             resize: none;
             outline: none;
+            text-align: right; /* راست‌چین برای فارسی */
         }
         .nav-bar {
             display: flex;
@@ -52,11 +52,18 @@
             gap: 20px;
             margin-bottom: 20px;
         }
+        /* استایل برای انتخابگر صفحه */
+        #page-num {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <button onclick="downloadPDF()">Download PDF</button>
+        <button onclick="searchContent()">Search</button>
         <button onclick="location.href='index.html'" style="color: #ff6b6b;">Log Out</button>
     </div>
 
@@ -64,12 +71,11 @@
 
     <div class="nav-bar">
         <button onclick="changePage(-1)">BACK</button>
-        <span id="page-num">Page: 1</span>
+        <div id="page-num" onclick="goToSpecificPage()">Page: 1</div>
         <button onclick="changePage(1)">NEXT</button>
     </div>
 
     <script>
-        // تنظیمات فایربیس تو
         const firebaseConfig = {
             apiKey: "AIzaSyBsEwllSPLTPuviM9-DTE0iwZ3vHSzyWrk",
             authDomain: "airalliedmind.firebaseapp.com",
@@ -82,18 +88,15 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let currentPage = 1;
-
         const editor = document.getElementById('page-content');
         const pageLabel = document.getElementById('page-num');
 
-        // خوندن متن از دیتابیس موقع لود شدن یا تعویض صفحه
         function loadPage(page) {
             db.ref('pages/' + page).once('value').then((snapshot) => {
                 editor.value = snapshot.val() || "";
             });
         }
 
-        // ذخیره خودکار متن در دیتابیس به محض تایپ کردن
         editor.addEventListener('input', () => {
             db.ref('pages/' + currentPage).set(editor.value);
         });
@@ -101,20 +104,45 @@
         function changePage(step) {
             currentPage += step;
             if (currentPage < 1) currentPage = 1;
+            updateUI();
+        }
+
+        function updateUI() {
             pageLabel.innerText = "Page: " + currentPage;
             loadPage(currentPage);
         }
 
-        async function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.setFillColor(245, 245, 220); // رنگ کاهی
-            doc.rect(0, 0, 210, 297, 'F');
-            doc.text(editor.value, 10, 10);
-            doc.save(`Page_${currentPage}.pdf`);
+        // قابلیت پریدن به صفحه خاص
+        function goToSpecificPage() {
+            const target = prompt("شماره صفحه را وارد کنید:", currentPage);
+            if (target && !isNaN(target)) {
+                currentPage = parseInt(target);
+                updateUI();
+            }
         }
 
-        // شروع اولیه
+        // قابلیت جست‌وجو در تمام صفحات
+        function searchContent() {
+            const query = prompt("کلمه مورد نظر برای جست‌وجو:");
+            if (!query) return;
+
+            db.ref('pages').once('value').then((snapshot) => {
+                const allPages = snapshot.val();
+                let found = false;
+                for (let p in allPages) {
+                    if (allPages[p].includes(query)) {
+                        if (confirm(`کلمه در صفحه ${p} پیدا شد. برویم به این صفحه؟`)) {
+                            currentPage = parseInt(p);
+                            updateUI();
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) alert("کلمه پیدا نشد.");
+            });
+        }
+
         loadPage(1);
     </script>
 </body>
