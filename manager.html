@@ -10,75 +10,27 @@
     <style>
         body {
             background: linear-gradient(0deg, #121212 0%, #1a1a1a 35%, #76b1ba 100%);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100dvh;
-            color: white;
-            font-family: sans-serif;
-            font-weight: bold;
-            overflow: hidden;
+            margin: 0; display: flex; flex-direction: column; height: 100dvh;
+            color: white; font-family: sans-serif; font-weight: bold; overflow: hidden;
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        button {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.1);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .search-btn { font-size: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(255, 255, 255, 0.1); }
+        button { padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: bold; cursor: pointer; }
         #page-content {
-            width: 90%;
-            height: 55vh;
-            margin: 20px auto;
-            background: rgba(255,255,255,0.05);
-            border: none;
-            color: white;
-            font-size: 20px;
-            padding: 15px;
-            border-radius: 15px;
-            resize: none;
-            outline: none;
-            font-weight: bold;
-            direction: auto;
-            unicode-bidi: plaintext;
+            width: 90%; height: 55vh; margin: 20px auto; background: rgba(255,255,255,0.05); border: none;
+            color: white; font-size: 20px; padding: 15px; border-radius: 15px; resize: none; outline: none;
+            font-weight: bold; direction: auto; unicode-bidi: plaintext;
         }
-        .nav-bar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-            margin-top: auto;
-            margin-bottom: 30px;
-        }
-        #page-num {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            min-width: 80px;
-            text-align: center;
-        }
+        .nav-bar { display: flex; justify-content: center; align-items: center; gap: 40px; margin-top: auto; margin-bottom: 30px; }
+        #page-num { background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; cursor: pointer; min-width: 80px; text-align: center; }
     </style>
 </head>
 <body>
     <div class="header">
-        <button onclick="downloadPDF()">PDF</button>
-        <button class="search-btn" onclick="searchContent()">🔍</button>
+        <button onclick="downloadFullPDF()">PDF ALL</button>
+        <button onclick="searchContent()">🔍</button>
         <button onclick="logout()" style="color: #ff6b6b;">Log Out</button>
     </div>
-
     <textarea id="page-content" placeholder="Write here..."></textarea>
-
     <div class="nav-bar">
         <button onclick="changePage(-1)">BACK</button>
         <div id="page-num" onclick="goToPage()">Page: 1</div>
@@ -86,7 +38,6 @@
     </div>
 
     <script>
-        // جلوگیری از برگشت دکمه گوشی
         history.pushState(null, null, location.href);
         window.onpopstate = function () { history.go(1); };
 
@@ -106,12 +57,10 @@
         function loadPage(page) {
             db.ref('pages/' + page).once('value').then((s) => { editor.value = s.val() || ""; });
         }
-
         editor.addEventListener('input', () => { db.ref('pages/' + currentPage).set(editor.value); });
-
+        
         function changePage(step) {
-            currentPage += step;
-            if (currentPage < 1) currentPage = 1;
+            currentPage += step; if (currentPage < 1) currentPage = 1;
             document.getElementById('page-num').innerText = "Page: " + currentPage;
             loadPage(currentPage);
         }
@@ -122,33 +71,39 @@
         }
 
         function searchContent() {
-            const query = prompt("Search for a word:");
+            const query = prompt("Search word:");
             if (!query) return;
             db.ref('pages').once('value').then((s) => {
-                const pages = s.val();
-                let foundIn = [];
-                for(let p in pages) { if(pages[p] && pages[p].includes(query)) foundIn.push(p); }
-                if(foundIn.length > 0) {
-                    const target = prompt("Found in pages: " + foundIn.join(", ") + "\nGo to page:");
-                    if(target && foundIn.includes(target)) { currentPage = parseInt(target); changePage(0); }
-                } else { alert("Not found!"); }
+                const pages = s.val(); let found = [];
+                for(let p in pages) { if(pages[p] && pages[p].includes(query)) found.push(p); }
+                if(found.length > 0) {
+                    const t = prompt("Found in: " + found.join(", ") + "\nGo to page:");
+                    if(t) { currentPage = parseInt(t); changePage(0); }
+                } else alert("Not found!");
             });
         }
 
-        function downloadPDF() {
+        async function downloadFullPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.setFillColor(244, 228, 188); 
-            doc.rect(0, 0, 210, 297, 'F');
-            doc.setTextColor(40, 40, 40);
-            doc.setFontSize(20);
-            const lines = doc.splitTextToSize(editor.value, 180);
-            doc.text(lines, 15, 30);
-            doc.save(`Page_${currentPage}.pdf`);
+            const snapshot = await db.ref('pages').once('value');
+            const allPages = snapshot.val();
+            if(!allPages) return alert("No pages to download!");
+
+            const sortedKeys = Object.keys(allPages).sort((a, b) => a - b);
+            
+            sortedKeys.forEach((key, index) => {
+                if (index > 0) doc.addPage();
+                doc.setFillColor(244, 228, 188); doc.rect(0, 0, 210, 297, 'F'); // کاهی
+                doc.setTextColor(100, 70, 40); doc.setFontSize(24); doc.text("Page " + key, 105, 20, {align: 'center'}); // هدر زیبا
+                doc.setTextColor(40, 40, 40); doc.setFontSize(16);
+                const lines = doc.splitTextToSize(allPages[key], 180);
+                doc.text(lines, 15, 40);
+            });
+            doc.save("AirAlliedMind_Full_Journal.pdf");
         }
 
         function logout() { location.replace('index.html'); }
-
         loadPage(1);
     </script>
 </body>
